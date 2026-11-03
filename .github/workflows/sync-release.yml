@@ -138,9 +138,12 @@ jobs:
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git pull --rebase origin "${GITHUB_REF_NAME}"
           git add state.json
-          git diff --cached --quiet || (git commit -m "chore: sync PiliPlus ${{ needs.check.outputs.resolved_ref }}" && git push)
+          if ! git diff --cached --quiet; then
+            git commit -m "chore: sync PiliPlus ${{ needs.check.outputs.resolved_ref }}"
+            git pull --rebase origin "${GITHUB_REF_NAME}"
+            git push
+          fi
 
       - name: Open or update diagnostic Issue on BLOCKED
         if: ${{ steps.build.outputs.audit_passed != 'true' }}
