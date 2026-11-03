@@ -12,9 +12,15 @@
 
 ## 简介
 
-PiliPlus (iOS 12) 将上游最新 [bggRGjQaUbCoE/PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus) 版本完整移植至 64 位 iOS 12 设备（`iPhone 5s`、`iPhone 6 / 6 Plus`、`iPhone 6s / 6s Plus`、`iPad Air 1`、`iPad mini 2 / 3` 及 `iPod touch 6`）。项目包含针对 iOS 12 编译的 Flutter 3.47+ 引擎、兼容 `dyld2` 的 `App.framework` 重链接、`libmpv` / `FFmpeg` 视频解码核心，以及覆盖 iOS 13+ Metal、`UIScene` 与 `UIKit` 的运行时垫片。
+PiliPlus (iOS 12) 将 [bggRGjQaUbCoE/PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus) 完整移植至 64 位 iOS 12 设备（`iPhone 5s`、`iPhone 6 / 6 Plus`、`iPhone 6s / 6s Plus`、`iPad Air 1`、`iPad mini 2 / 3` 及 `iPod touch 6`）。
 
-构建流程每日自动同步上游发布，不阉割或回退业务代码。在 iOS 12 上，文件选择自动回退至 `UIDocumentPickerViewController` 与 `UIImagePickerController`，网络状态检测使用 `SystemConfiguration`，且每个 IPA 发布前均通过 `iPhoneOS12.4.sdk` 离线符号校验。底层移植工具链见 [AsabaLazy/oldcook](https://github.com/AsabaLazy/oldcook)。
+## 兼容性
+
+项目包含针对 iOS 12 编译的 Flutter 3.47+ 引擎、兼容 `dyld2` 的 `App.framework` 重链接、`libmpv` / `FFmpeg` 视频解码核心，以及覆盖 iOS 13+ Metal、`UIScene` 与 `UIKit` 的运行时垫片。
+
+## 构建流程
+
+每日自动同步上游发布，底层移植工具链见 [AsabaLazy/oldcook](https://github.com/AsabaLazy/oldcook)。
 
 ## 更新日志
 

@@ -12,9 +12,15 @@ English | [简体中文](README.zh-CN.md)
 
 ## Description
 
-PiliPlus (iOS 12) packages the latest upstream [bggRGjQaUbCoE/PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus) release for 64-bit iOS 12 devices (`iPhone 5s`, `iPhone 6 / 6 Plus`, `iPhone 6s / 6s Plus`, `iPad Air 1`, `iPad mini 2 / 3`, and `iPod touch 6`). It pairs a patched Flutter 3.47+ iOS 12 engine with `dyld2`-compatible `App.framework` relinking, `libmpv` / `FFmpeg` hardware-decoded playback, and runtime shims for iOS 13+ Metal, UIScene, and UIKit APIs.
+PiliPlus (iOS 12) ports [bggRGjQaUbCoE/PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus) to 64-bit iOS 12 devices (`iPhone 5s`, `iPhone 6 / 6 Plus`, `iPhone 6s / 6s Plus`, `iPad Air 1`, `iPad mini 2 / 3`, and `iPod touch 6`).
 
-Builds run automatically against upstream releases without reverting app features. File picking falls back to `UIDocumentPickerViewController` and `UIImagePickerController` on iOS 12, network reachability uses `SystemConfiguration`, and every IPA is verified offline against `iPhoneOS12.4.sdk` before publishing. See [AsabaLazy/oldcook](https://github.com/AsabaLazy/oldcook) for the build toolchain.
+## Compatibility
+
+Includes a patched Flutter 3.47+ iOS 12 engine, `dyld2`-compatible `App.framework` relinking, `libmpv` / `FFmpeg` video decoding core, and runtime shims covering iOS 13+ Metal, `UIScene`, and `UIKit` APIs.
+
+## Build Pipeline
+
+Synced daily with upstream releases. See [AsabaLazy/oldcook](https://github.com/AsabaLazy/oldcook) for the underlying backport toolchain.
 
 ## Changelog
 
