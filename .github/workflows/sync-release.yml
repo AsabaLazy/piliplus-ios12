@@ -35,7 +35,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           python3 - <<'PY'
-          import json, os, re, urllib.request, urllib.error
+          import json, os, re, urllib.request
           from pathlib import Path
 
           headers = {"Accept": "application/vnd.github+json", "User-Agent": "piliplus-ios12-sync"}
@@ -75,9 +75,6 @@ jobs:
               eng_ready = False
 
           print(f"Upstream ref={ref}, flutter={fver}, needs_update={needs_update}, engine_ready={eng_ready}")
-          if needs_update and not eng_ready:
-              print(f"::warning::Engine release engine-{fver}-ios12 is not yet published on AsabaLazy/oldcook; skipping until ready.")
-
           should_build = needs_update and eng_ready
           with open(os.environ["GITHUB_OUTPUT"], "a") as out:
               out.write(f"should_build={'true' if should_build else 'false'}\n")
@@ -85,58 +82,49 @@ jobs:
               out.write(f"flutter_ver={fver}\n")
           PY
 
-  build:
+  build-and-release:
     needs: check
     if: ${{ needs.check.outputs.should_build == 'true' }}
-    uses: AsabaLazy/oldcook/.github/workflows/reusable-flutter-ios12.yml@main
-    with:
-      recipe: piliplus
-      upstream_ref: ${{ needs.check.outputs.resolved_ref }}
-      engine_repo: AsabaLazy/oldcook
-      strict_audit: false
-
-  publish:
-    needs: [check, build]
-    if: ${{ always() && needs.check.outputs.should_build == 'true' && needs.build.result == 'success' }}
-    runs-on: ubuntu-latest
+    runs-on: macos-15
     steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.ref_name }}
+      - name: Checkout piliplus-ios12 repo
+        uses: actions/checkout@v4
 
-      - name: Download built IPA & iOS 12 audit report
-        uses: actions/download-artifact@v4
+      - name: Run oldcook iOS 12 Composite Builder
+        id: build
+        uses: AsabaLazy/oldcook@main
+        with:
+          recipe: piliplus
+          upstream_ref: ${{ needs.check.outputs.resolved_ref }}
+          engine_repo: AsabaLazy/oldcook
+
+      - name: Upload IPA & audit artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
         with:
           name: piliplus-ios12-bundle
-          path: dist
-
-      - name: Check gatekeeper verdict
-        id: gate
-        run: |
-          cat dist/piliplus-audit.txt
-          if grep -q "Verdict: PASS" dist/piliplus-audit.txt; then
-            echo "verdict=pass" >> "${GITHUB_OUTPUT}"
-          else
-            echo "verdict=blocked" >> "${GITHUB_OUTPUT}"
-          fi
+          path: |
+            ${{ steps.build.outputs.ipa_path }}
+            ${{ steps.build.outputs.audit_txt_path }}
+            ${{ steps.build.outputs.audit_json_path }}
 
       - name: Publish Release & update state.json on PASS
-        if: ${{ steps.gate.outputs.verdict == 'pass' }}
+        if: ${{ steps.build.outputs.audit_passed == 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           REF="${{ needs.check.outputs.resolved_ref }}"
           SAFE_REF="$(echo "${REF}" | tr '/+' '--')"
           TAG="v${SAFE_REF}-ios12"
-          IPA_FILE="dist/PiliPlus_${SAFE_REF}_ios12_unsigned.ipa"
-          cp dist/piliplus-ios12-unsigned.ipa "${IPA_FILE}"
+          IPA_FILE="PiliPlus_${SAFE_REF}_ios12_unsigned.ipa"
+          cp "${{ steps.build.outputs.ipa_path }}" "${IPA_FILE}"
 
           if gh release view "${TAG}" >/dev/null 2>&1; then
-            gh release upload "${TAG}" "${IPA_FILE}" dist/piliplus-audit.txt --clobber
+            gh release upload "${TAG}" "${IPA_FILE}" "${{ steps.build.outputs.audit_txt_path }}" --clobber
           else
-            gh release create "${TAG}" "${IPA_FILE}" dist/piliplus-audit.txt \
+            gh release create "${TAG}" "${IPA_FILE}" "${{ steps.build.outputs.audit_txt_path }}" \
               --title "PiliPlus ${REF} (iOS 12)" \
-              --notes-file dist/piliplus-audit.txt
+              --notes-file "${{ steps.build.outputs.audit_txt_path }}"
           fi
 
           python3 - <<'PY'
@@ -155,15 +143,15 @@ jobs:
           git diff --cached --quiet || (git commit -m "chore: sync PiliPlus ${{ needs.check.outputs.resolved_ref }}" && git push)
 
       - name: Open or update diagnostic Issue on BLOCKED
-        if: ${{ steps.gate.outputs.verdict != 'pass' }}
+        if: ${{ steps.build.outputs.audit_passed != 'true' }}
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           TITLE="[iOS 12 Gatekeeper] PiliPlus ${{ needs.check.outputs.resolved_ref }} blocked"
           EXISTING="$(gh issue list --state open --search "${TITLE} in:title" --json number --jq '.[0].number // empty')"
           if [ -z "${EXISTING}" ]; then
-            gh issue create --title "${TITLE}" --body-file dist/piliplus-audit.txt
+            gh issue create --title "${TITLE}" --body-file "${{ steps.build.outputs.audit_txt_path }}"
           else
-            gh issue comment "${EXISTING}" --body-file dist/piliplus-audit.txt
+            gh issue comment "${EXISTING}" --body-file "${{ steps.build.outputs.audit_txt_path }}"
           fi
           exit 1
