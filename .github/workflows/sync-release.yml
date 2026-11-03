@@ -1,0 +1,169 @@
+name: Sync & Release PiliPlus iOS 12
+
+on:
+  schedule:
+    - cron: "45 20 * * *"
+  workflow_dispatch:
+    inputs:
+      force:
+        description: "Force rebuild even if state.json already matches latest upstream release"
+        required: false
+        default: false
+        type: boolean
+      upstream_ref:
+        description: "Optional specific PiliPlus tag or commit to build"
+        required: false
+        default: ""
+        type: string
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    outputs:
+      should_build: ${{ steps.detect.outputs.should_build }}
+      resolved_ref: ${{ steps.detect.outputs.resolved_ref }}
+      flutter_ver: ${{ steps.detect.outputs.flutter_ver }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check bggRGjQaUbCoE/PiliPlus latest release & oldcook engine readiness
+        id: detect
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          python3 - <<'PY'
+          import json, os, re, urllib.request, urllib.error
+          from pathlib import Path
+
+          headers = {"Accept": "application/vnd.github+json", "User-Agent": "piliplus-ios12-sync"}
+          tok = os.environ.get("GITHUB_TOKEN")
+          if tok:
+              headers["Authorization"] = f"Bearer {tok}"
+
+          def get_json(url):
+              req = urllib.request.Request(url, headers=headers)
+              with urllib.request.urlopen(req, timeout=20) as r:
+                  return json.loads(r.read().decode())
+
+          override_ref = "${{ inputs.upstream_ref }}".strip()
+          force = "${{ inputs.force }}" == "true"
+
+          if override_ref:
+              ref = override_ref
+          else:
+              rel = get_json("https://api.github.com/repos/bggRGjQaUbCoE/PiliPlus/releases/latest")
+              ref = rel["tag_name"]
+
+          with urllib.request.urlopen(f"https://raw.githubusercontent.com/bggRGjQaUbCoE/PiliPlus/{ref}/pubspec.yaml", timeout=20) as r:
+              pubspec = r.read().decode()
+          m = re.search(r"^\s{2}flutter\s*:\s*['\"]?([0-9.]+)['\"]?", pubspec, re.M)
+          fver = m.group(1) if m else ""
+
+          state = json.loads(Path("state.json").read_text()) if Path("state.json").exists() else {}
+          needs_update = force or bool(override_ref) or (state.get("last_built_ref") != ref)
+
+          eng_url = f"https://github.com/AsabaLazy/oldcook/releases/download/engine-{fver}-ios12/flutter-engine-{fver}-ios12-arm64.tar.xz"
+          eng_ready = False
+          try:
+              req = urllib.request.Request(eng_url, method="HEAD", headers={"User-Agent": "piliplus-ios12-sync"})
+              with urllib.request.urlopen(req, timeout=15) as r:
+                  eng_ready = (r.status == 200)
+          except Exception:
+              eng_ready = False
+
+          print(f"Upstream ref={ref}, flutter={fver}, needs_update={needs_update}, engine_ready={eng_ready}")
+          if needs_update and not eng_ready:
+              print(f"::warning::Engine release engine-{fver}-ios12 is not yet published on AsabaLazy/oldcook; skipping until ready.")
+
+          should_build = needs_update and eng_ready
+          with open(os.environ["GITHUB_OUTPUT"], "a") as out:
+              out.write(f"should_build={'true' if should_build else 'false'}\n")
+              out.write(f"resolved_ref={ref}\n")
+              out.write(f"flutter_ver={fver}\n")
+          PY
+
+  build:
+    needs: check
+    if: ${{ needs.check.outputs.should_build == 'true' }}
+    uses: AsabaLazy/oldcook/.github/workflows/reusable-flutter-ios12.yml@main
+    with:
+      recipe: piliplus
+      upstream_ref: ${{ needs.check.outputs.resolved_ref }}
+      engine_repo: AsabaLazy/oldcook
+      strict_audit: false
+
+  publish:
+    needs: [check, build]
+    if: ${{ always() && needs.check.outputs.should_build == 'true' && needs.build.result == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Download built IPA & iOS 12 audit report
+        uses: actions/download-artifact@v4
+        with:
+          name: piliplus-ios12-bundle
+          path: dist
+
+      - name: Check gatekeeper verdict
+        id: gate
+        run: |
+          cat dist/piliplus-audit.txt
+          if grep -q "Verdict: PASS" dist/piliplus-audit.txt; then
+            echo "verdict=pass" >> "${GITHUB_OUTPUT}"
+          else
+            echo "verdict=blocked" >> "${GITHUB_OUTPUT}"
+          fi
+
+      - name: Publish Release & update state.json on PASS
+        if: ${{ steps.gate.outputs.verdict == 'pass' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          REF="${{ needs.check.outputs.resolved_ref }}"
+          SAFE_REF="$(echo "${REF}" | tr '/+' '--')"
+          TAG="v${SAFE_REF}-ios12"
+          IPA_FILE="dist/PiliPlus_${SAFE_REF}_ios12_unsigned.ipa"
+          cp dist/piliplus-ios12-unsigned.ipa "${IPA_FILE}"
+
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            gh release upload "${TAG}" "${IPA_FILE}" dist/piliplus-audit.txt --clobber
+          else
+            gh release create "${TAG}" "${IPA_FILE}" dist/piliplus-audit.txt \
+              --title "PiliPlus ${REF} (iOS 12)" \
+              --notes-file dist/piliplus-audit.txt
+          fi
+
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          Path("state.json").write_text(json.dumps({
+              "last_built_ref": "${{ needs.check.outputs.resolved_ref }}",
+              "last_flutter_version": "${{ needs.check.outputs.flutter_ver }}",
+          }, indent=2) + "\n")
+          PY
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin "${GITHUB_REF_NAME}"
+          git add state.json
+          git diff --cached --quiet || (git commit -m "chore: sync PiliPlus ${{ needs.check.outputs.resolved_ref }}" && git push)
+
+      - name: Open or update diagnostic Issue on BLOCKED
+        if: ${{ steps.gate.outputs.verdict != 'pass' }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TITLE="[iOS 12 Gatekeeper] PiliPlus ${{ needs.check.outputs.resolved_ref }} blocked"
+          EXISTING="$(gh issue list --state open --search "${TITLE} in:title" --json number --jq '.[0].number // empty')"
+          if [ -z "${EXISTING}" ]; then
+            gh issue create --title "${TITLE}" --body-file dist/piliplus-audit.txt
+          else
+            gh issue comment "${EXISTING}" --body-file dist/piliplus-audit.txt
+          fi
+          exit 1
