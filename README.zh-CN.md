@@ -29,7 +29,3 @@ PiliPlus (iOS 12) 将 [bggRGjQaUbCoE/PiliPlus](https://github.com/bggRGjQaUbCoE/
 ## 问题反馈
 
 iOS 12 闪退日志与兼容性问题请在 [Issues](https://github.com/AsabaLazy/piliplus-ios12/issues) 中提交。
-
-## 常见问题
-
-见 [AsabaLazy/oldcook](https://github.com/AsabaLazy/oldcook/blob/main/Agent.md)。

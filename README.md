@@ -29,7 +29,3 @@ See the [Releases](https://github.com/AsabaLazy/piliplus-ios12/releases) page, o
 ## Issues
 
 Report iOS 12 crash logs and compatibility bugs in [Issues](https://github.com/AsabaLazy/piliplus-ios12/issues).
-
-## FAQ
-
-See [AsabaLazy/oldcook](https://github.com/AsabaLazy/oldcook/blob/main/Agent.md).
