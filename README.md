@@ -1,6 +1,6 @@
 # PiliPlus (iOS 12)
 
-iOS 12.2–12.5.7 compatibility build of bggRGjQaUbCoE/PiliPlus. Built with AI-assisted coding.
+iOS 12.2–12.5.7 compatibility build of [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus). Built with AI-assisted coding.
 
 English | [简体中文](README.zh-CN.md)
 
@@ -12,7 +12,7 @@ English | [简体中文](README.zh-CN.md)
 
 ## Description
 
-PiliPlus (iOS 12) builds [bggRGjQaUbCoE/PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus) for 64-bit iOS 12 devices (iPhone 5s, iPhone 6 / 6 Plus, iPhone 6s / 6s Plus, iPad Air 1, iPad mini 2 / 3, and iPod touch 6).
+PiliPlus (iOS 12) builds [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus) for 64-bit iOS 12 devices (iPhone 5s, iPhone 6 / 6 Plus, iPhone 6s / 6s Plus, iPad Air 1, iPad mini 2 / 3, and iPod touch 6).
 
 ## Compatibility
 
@@ -20,7 +20,7 @@ Includes a patched Flutter 3.47+ iOS 12 engine, dyld2-compatible App.framework r
 
 ## Build Pipeline
 
-Scheduled GitHub Actions workflows track upstream releases and build packages using [AsabaLazy/oldcook](https://github.com/AsabaLazy/oldcook). This project is developed with AI-assisted coding.
+Scheduled GitHub Actions workflows track upstream releases and build packages using [oldcook](https://github.com/AsabaLazy/oldcook). This project is developed with AI-assisted coding.
 
 ## Changelog
 

@@ -1,6 +1,6 @@
 # PiliPlus (iOS 12)
 
-bggRGjQaUbCoE/PiliPlus 的 iOS 12.2–12.5.7 兼容构建版本。本项目使用 AI 辅助编码开发。
+[PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus) 的 iOS 12.2–12.5.7 兼容构建版本。本项目使用 AI 辅助编码开发。
 
 [English](README.md) | 简体中文
 
@@ -12,7 +12,7 @@ bggRGjQaUbCoE/PiliPlus 的 iOS 12.2–12.5.7 兼容构建版本。本项目使�
 
 ## 简介
 
-PiliPlus (iOS 12) 面向 64 位 iOS 12 设备（iPhone 5s、iPhone 6 / 6 Plus、iPhone 6s / 6s Plus、iPad Air 1、iPad mini 2 / 3 及 iPod touch 6）构建 [bggRGjQaUbCoE/PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus)。
+PiliPlus (iOS 12) 面向 64 位 iOS 12 设备（iPhone 5s、iPhone 6 / 6 Plus、iPhone 6s / 6s Plus、iPad Air 1、iPad mini 2 / 3 及 iPod touch 6）构建 [PiliPlus](https://github.com/bggRGjQaUbCoE/PiliPlus)。
 
 ## 兼容性
 
@@ -20,7 +20,7 @@ PiliPlus (iOS 12) 面向 64 位 iOS 12 设备（iPhone 5s、iPhone 6 / 6 Plus、
 
 ## 构建流程
 
-通过 GitHub Actions 定时同步上游版本，底层构建与补丁工具链见 [AsabaLazy/oldcook](https://github.com/AsabaLazy/oldcook)。本项目使用 AI 辅助编码开发。
+通过 GitHub Actions 定时同步上游版本，底层构建与补丁工具链见 [oldcook](https://github.com/AsabaLazy/oldcook)。本项目使用 AI 辅助编码开发。
 
 ## 更新日志
 
